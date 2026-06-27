@@ -10,6 +10,7 @@ local jacl = {
         id = "VAL",
         name = "JACL-S3D2 VALSHAMR",
         reactor = 1,
+        envelope = 1, 
 
     },
 
