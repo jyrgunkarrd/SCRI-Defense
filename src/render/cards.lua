@@ -385,6 +385,13 @@ local function getHoveredHandCard(layout)
     end
 end
 
+function cards.isCursorOverPlayerHand()
+    local layout = getPlayerHandLayout()
+    local hoveredCard = getHoveredHandCard(layout)
+
+    return hoveredCard ~= nil
+end
+
 local function drawCard(card, x, y)
     if not card then
         return

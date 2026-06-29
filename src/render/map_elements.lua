@@ -122,23 +122,19 @@ local function drawTabs(tileX, tileY, tileWidth)
 end
 
 local function drawRightBoxes(tileX, tileY, tileWidth)
-    local boxX = tileX + tileWidth - FACILITY_IMAGE_PADDING - RIGHT_BOX_WIDTH
-    local topGroupY = tileY + FACILITY_IMAGE_PADDING
-    local bottomGroupY = tileY + TILE_HEIGHT - FACILITY_IMAGE_PADDING - RIGHT_BOX_HEIGHT * 2 - RIGHT_BOX_GAP
-
     love.graphics.setLineWidth(3)
 
     for index = 0, 1 do
-        local topBoxY = topGroupY + index * (RIGHT_BOX_HEIGHT + RIGHT_BOX_GAP)
-        local bottomBoxY = bottomGroupY + index * (RIGHT_BOX_HEIGHT + RIGHT_BOX_GAP)
+        local topBoxX, topBoxY, topBoxWidth, topBoxHeight = mapElements.getRightBoxBounds(index + 3)
+        local bottomBoxX, bottomBoxY, bottomBoxWidth, bottomBoxHeight = mapElements.getRightBoxBounds(index + 1)
 
         love.graphics.setColor(0, 0, 0)
-        love.graphics.rectangle("fill", boxX, topBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
-        love.graphics.rectangle("fill", boxX, bottomBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
+        love.graphics.rectangle("fill", topBoxX, topBoxY, topBoxWidth, topBoxHeight)
+        love.graphics.rectangle("fill", bottomBoxX, bottomBoxY, bottomBoxWidth, bottomBoxHeight)
 
         love.graphics.setColor(1, 1, 1)
-        love.graphics.rectangle("line", boxX, topBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
-        love.graphics.rectangle("line", boxX, bottomBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
+        love.graphics.rectangle("line", topBoxX, topBoxY, topBoxWidth, topBoxHeight)
+        love.graphics.rectangle("line", bottomBoxX, bottomBoxY, bottomBoxWidth, bottomBoxHeight)
     end
 end
 
@@ -150,6 +146,21 @@ function mapElements.getTileBounds()
     local tileY = (screenHeight - TILE_HEIGHT) / 2 + TILE_Y_OFFSET
 
     return tileX, tileY, tileWidth, TILE_HEIGHT
+end
+
+function mapElements.getRightBoxBounds(positionFromBottom)
+    local tileX, tileY, tileWidth = mapElements.getTileBounds()
+    local boxX = tileX + tileWidth - FACILITY_IMAGE_PADDING - RIGHT_BOX_WIDTH
+    local topGroupY = tileY + FACILITY_IMAGE_PADDING
+    local bottomGroupY = tileY + TILE_HEIGHT - FACILITY_IMAGE_PADDING - RIGHT_BOX_HEIGHT * 2 - RIGHT_BOX_GAP
+    local positions = {
+        bottomGroupY + RIGHT_BOX_HEIGHT + RIGHT_BOX_GAP,
+        bottomGroupY,
+        topGroupY + RIGHT_BOX_HEIGHT + RIGHT_BOX_GAP,
+        topGroupY,
+    }
+
+    return boxX, positions[positionFromBottom or 1], RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT
 end
 
 local function getTabIndexAtPosition(x, y)

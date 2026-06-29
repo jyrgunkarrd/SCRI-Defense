@@ -8,7 +8,14 @@ local VAL_units = {
         id = "BERET",
         name = "Black Beret",
         dice = {
-            { WHT = 1 },
+            { BLK = 1 },
+        },
+        tags = {
+
+            "human",
+            "soldier",
+            "paratrooper",
+
         },
 
     },

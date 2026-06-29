@@ -80,7 +80,7 @@ local dice = {
             F1 = { type = "blank" },
             F2 = { type = "tac", value = 1 },
             F3 = { type = "tac", value = 1 },
-            F4 = { type = "damage", htype = "tac" value = 1 },
+            F4 = { type = "damage", htype = "tac", value = 1 },
             F5 = { type = "tac", value = 2 },
             F6 = { type = "damage", htype = "tac", value = 2 },
 
@@ -102,7 +102,7 @@ local dice = {
             F6 = { type = "damage", value = 3 },
 
         },
-        color = "000000",
+        color = "4a454b",
 
     },
 

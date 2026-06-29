@@ -1,6 +1,7 @@
 local mapElements = require("src.render.map_elements")
 local playerOverlays = require("src.render.player_overlays")
 local cards = require("src.render.cards")
+local unitRndr = require("src.render.unit_rndr")
 local input = require("src.controls.input")
 
 function love.load()
@@ -10,10 +11,12 @@ function love.load()
     mapElements.load()
     playerOverlays.load()
     cards.load()
+    unitRndr.load()
 end
 
 function love.draw()
     mapElements.drawLargeTile()
+    unitRndr.drawPlayerUnits()
     playerOverlays.drawTopBox()
     cards.drawFocusedCard()
     cards.drawPlayerHand()
