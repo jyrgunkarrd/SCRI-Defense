@@ -15,9 +15,13 @@ local REACTOR_VALUE_BOX_HEIGHT = 44
 local REACTOR_VALUE_BOX_GAP = 10
 local PORTRAIT_PADDING = 10
 local PORTRAIT_EXTENSIONS = { "webp", "png", "jpg", "jpeg" }
+local JACL_BOX_OUTLINE_COLOR = { 0.29, 0.271, 0.294 }
+local REACTOR_COLOR = { 0.788, 0.925, 0.522 }
+local ENVELOPE_COLOR = { 0.976, 0.631, 0.004 }
 
 local portrait
 local reactorIcon
+local envelopeIcon
 local activeJacl
 local currentReactorPoints = 0
 
@@ -45,6 +49,10 @@ function playerOverlays.load()
 
     if love.filesystem.getInfo("assets/images/icons/overlay/reactor.png", "file") then
         reactorIcon = imageLoader.newImage("assets/images/icons/overlay/reactor.png")
+    end
+
+    if love.filesystem.getInfo("assets/images/icons/overlay/envelope.png", "file") then
+        envelopeIcon = imageLoader.newImage("assets/images/icons/overlay/envelope.png")
     end
 end
 
@@ -97,13 +105,19 @@ local function drawCenteredText(text, x, y, width, height)
     love.graphics.printf(text, x, y + (height - textHeight) / 2, width, "center")
 end
 
-local function drawValueBox(text, x, y)
-    love.graphics.setColor(0, 0, 0)
+local function drawValueBox(text, x, y, fillColor, outlineColor, textColor)
+    fillColor = fillColor or { 0, 0, 0 }
+    outlineColor = outlineColor or { 1, 1, 1 }
+    textColor = textColor or { 1, 1, 1 }
+
+    love.graphics.setColor(fillColor)
     love.graphics.rectangle("fill", x, y, REACTOR_VALUE_BOX_WIDTH, REACTOR_VALUE_BOX_HEIGHT)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(outlineColor)
     love.graphics.setLineWidth(3)
     love.graphics.rectangle("line", x, y, REACTOR_VALUE_BOX_WIDTH, REACTOR_VALUE_BOX_HEIGHT)
+
+    love.graphics.setColor(textColor)
     drawCenteredText(text, x, y, REACTOR_VALUE_BOX_WIDTH, REACTOR_VALUE_BOX_HEIGHT)
 end
 
@@ -119,26 +133,47 @@ local function drawReactorPanel(topBoxX, y, boxSize)
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle("fill", panelX, y, SIDE_PANEL_WIDTH, boxSize)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(REACTOR_COLOR)
     love.graphics.setLineWidth(6)
     love.graphics.rectangle("line", panelX, y, SIDE_PANEL_WIDTH, boxSize)
 
     drawCenteredImage(reactorIcon, iconX, iconY, REACTOR_ICON_SIZE)
-    drawValueBox(("+" .. tostring(reactorValue)), valueBoxX, valueBoxY)
-    drawValueBox(tostring(currentReactorPoints), valueBoxX, valueBoxY + REACTOR_VALUE_BOX_HEIGHT + REACTOR_VALUE_BOX_GAP)
+    drawValueBox(("+" .. tostring(reactorValue)), valueBoxX, valueBoxY, REACTOR_COLOR, REACTOR_COLOR, { 0, 0, 0 })
+    drawValueBox(tostring(currentReactorPoints), valueBoxX, valueBoxY + REACTOR_VALUE_BOX_HEIGHT + REACTOR_VALUE_BOX_GAP, { 0, 0, 0 }, REACTOR_COLOR, REACTOR_COLOR)
+end
+
+local function drawEnvelopePanel(topBoxX, y, boxSize)
+    local panelX = topBoxX + boxSize + SIDE_PANEL_GAP
+    local iconX = panelX + (SIDE_PANEL_WIDTH - REACTOR_ICON_SIZE) / 2
+    local iconY = y + SIDE_PANEL_PADDING
+    local valueBoxX = panelX + (SIDE_PANEL_WIDTH - REACTOR_VALUE_BOX_WIDTH) / 2
+    local valueBoxesHeight = REACTOR_VALUE_BOX_HEIGHT * 2 + REACTOR_VALUE_BOX_GAP
+    local valueBoxY = iconY + REACTOR_ICON_SIZE + (boxSize - SIDE_PANEL_PADDING - REACTOR_ICON_SIZE - valueBoxesHeight) / 2 + REACTOR_VALUE_BOX_HEIGHT + REACTOR_VALUE_BOX_GAP
+    local envelopeValue = activeJacl and activeJacl.envelope or 0
+
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle("fill", panelX, y, SIDE_PANEL_WIDTH, boxSize)
+
+    love.graphics.setColor(ENVELOPE_COLOR)
+    love.graphics.setLineWidth(6)
+    love.graphics.rectangle("line", panelX, y, SIDE_PANEL_WIDTH, boxSize)
+
+    drawCenteredImage(envelopeIcon, iconX, iconY, REACTOR_ICON_SIZE)
+    drawValueBox(tostring(envelopeValue), valueBoxX, valueBoxY, { 0, 0, 0 }, ENVELOPE_COLOR, ENVELOPE_COLOR)
 end
 
 function playerOverlays.drawTopBox()
     local x, y, boxSize = getTopBoxBounds()
 
     drawReactorPanel(x, y, boxSize)
+    drawEnvelopePanel(x, y, boxSize)
 
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle("fill", x, y, boxSize, boxSize)
 
     drawPortrait(x, y, boxSize)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(JACL_BOX_OUTLINE_COLOR)
     love.graphics.setLineWidth(6)
     love.graphics.rectangle("line", x, y, boxSize, boxSize)
 

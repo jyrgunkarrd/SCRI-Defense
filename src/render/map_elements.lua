@@ -11,6 +11,10 @@ local TAB_WIDTH = 190
 local TAB_GAP = 4
 local TAB_INSET = 18
 local FACILITY_IMAGE_PADDING = 18
+local RIGHT_BOX_WIDTH = 520
+local RIGHT_BOX_HEIGHT = 140
+local RIGHT_BOX_GAP = 12
+local CENTER_SQUARE_GAP = FACILITY_IMAGE_PADDING
 local FACILITY_IMAGE_EXTENSIONS = { "webp", "png", "jpg", "jpeg" }
 
 local facilityImages = {}
@@ -44,21 +48,49 @@ local function drawFacilityImage(tileX, tileY, tileWidth)
     local facilityImage = selectedFacility and facilityImages[selectedFacility.id] or nil
 
     if not facilityImage then
-        return
+        return nil
     end
 
     local availableHeight = TILE_HEIGHT - FACILITY_IMAGE_PADDING * 2
     local x = tileX + TAB_INSET + TAB_WIDTH + FACILITY_IMAGE_PADDING
-    local availableWidth = tileX + tileWidth - FACILITY_IMAGE_PADDING - x
+    local rightBoxX = tileX + tileWidth - FACILITY_IMAGE_PADDING - RIGHT_BOX_WIDTH
+    local centerSquareSize = (availableHeight - CENTER_SQUARE_GAP) / 2
+    local availableWidth = rightBoxX - FACILITY_IMAGE_PADDING - centerSquareSize - FACILITY_IMAGE_PADDING - x
     local scale = math.min(
         availableHeight / facilityImage:getHeight(),
-        availableWidth / facilityImage:getWidth()
+        math.max(0, availableWidth) / facilityImage:getWidth()
     )
+    local width = facilityImage:getWidth() * scale
     local height = facilityImage:getHeight() * scale
     local y = tileY + (TILE_HEIGHT - height) / 2
 
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(facilityImage, x, y, 0, scale, scale)
+
+    return x, y, width, height
+end
+
+local function drawCenterSquares(tileX, tileY, imageX, imageWidth)
+    if not imageX or not imageWidth then
+        return
+    end
+
+    local availableHeight = TILE_HEIGHT - FACILITY_IMAGE_PADDING * 2
+    local squareSize = (availableHeight - CENTER_SQUARE_GAP) / 2
+    local squareX = imageX + imageWidth + FACILITY_IMAGE_PADDING
+    local firstSquareY = tileY + FACILITY_IMAGE_PADDING
+
+    love.graphics.setLineWidth(3)
+
+    for index = 0, 1 do
+        local squareY = firstSquareY + index * (squareSize + CENTER_SQUARE_GAP)
+
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.rectangle("fill", squareX, squareY, squareSize, squareSize)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", squareX, squareY, squareSize, squareSize)
+    end
 end
 
 local function drawTabs(tileX, tileY, tileWidth)
@@ -86,6 +118,27 @@ local function drawTabs(tileX, tileY, tileWidth)
 
         love.graphics.setColor(selected and 1 or 0, selected and 1 or 0, selected and 1 or 0)
         love.graphics.printf(label, tabX, tabY + (tabHeight - textHeight) / 2, TAB_WIDTH, "center")
+    end
+end
+
+local function drawRightBoxes(tileX, tileY, tileWidth)
+    local boxX = tileX + tileWidth - FACILITY_IMAGE_PADDING - RIGHT_BOX_WIDTH
+    local topGroupY = tileY + FACILITY_IMAGE_PADDING
+    local bottomGroupY = tileY + TILE_HEIGHT - FACILITY_IMAGE_PADDING - RIGHT_BOX_HEIGHT * 2 - RIGHT_BOX_GAP
+
+    love.graphics.setLineWidth(3)
+
+    for index = 0, 1 do
+        local topBoxY = topGroupY + index * (RIGHT_BOX_HEIGHT + RIGHT_BOX_GAP)
+        local bottomBoxY = bottomGroupY + index * (RIGHT_BOX_HEIGHT + RIGHT_BOX_GAP)
+
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.rectangle("fill", boxX, topBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
+        love.graphics.rectangle("fill", boxX, bottomBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", boxX, topBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
+        love.graphics.rectangle("line", boxX, bottomBoxY, RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT)
     end
 end
 
@@ -125,7 +178,9 @@ function mapElements.drawLargeTile()
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle("fill", x, y, tileWidth, TILE_HEIGHT)
 
-    drawFacilityImage(x, y, tileWidth)
+    local imageX, _, imageWidth = drawFacilityImage(x, y, tileWidth)
+    drawCenterSquares(x, y, imageX, imageWidth)
+    drawRightBoxes(x, y, tileWidth)
     drawTabs(x, y, tileWidth)
 
     love.graphics.setColor(1, 1, 1)

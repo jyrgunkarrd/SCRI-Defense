@@ -1,0 +1,20 @@
+name: HakkoAI
+game_slug: hakkoai
+slug: hakkoai-local-installer
+version: Local Windows installer
+runner: wine
+
+script:
+  files:
+    - setup: "N/A:Select the HakkoAI Windows installer from ~/Downloads"
+  game:
+    exe: "$GAMEDIR/drive_c/Program Files/HakkoAI/HakkoAI.exe"
+    prefix: "$GAMEDIR"
+  installer:
+    - task:
+        name: create_prefix
+        prefix: "$GAMEDIR"
+    - task:
+        name: wineexec
+        executable: setup
+        prefix: "$GAMEDIR"

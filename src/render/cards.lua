@@ -340,14 +340,15 @@ local function getPlayerHandLayout()
     local availableWidth = screenWidth - HAND_EDGE_MARGIN * 2
     local spacing = HAND_CARD_SPACING
 
-    local handWidth = CARD_WIDTH + spacing * (cardCount - 1)
-    local maxScroll = math.max(0, handWidth - availableWidth)
+    local handFaceWidth = CARD_WIDTH + spacing * (cardCount - 1)
+    local handOuterWidth = handFaceWidth + CARD_BACKING_PADDING * 2
+    local maxScroll = math.max(0, handOuterWidth - availableWidth)
     local scroll = math.max(0, math.min(handsDecks.getPlayerHandScroll(), maxScroll))
-    local startX = (screenWidth - handWidth) / 2
+    local startX = (screenWidth - handOuterWidth) / 2 + CARD_BACKING_PADDING
 
     if maxScroll > 0 then
         handsDecks.setPlayerHandScroll(scroll)
-        startX = HAND_EDGE_MARGIN - scroll
+        startX = HAND_EDGE_MARGIN + CARD_BACKING_PADDING - scroll
     elseif handsDecks.getPlayerHandScroll() ~= 0 then
         handsDecks.setPlayerHandScroll(0)
     end
