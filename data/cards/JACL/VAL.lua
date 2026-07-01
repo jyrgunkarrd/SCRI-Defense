@@ -6,20 +6,31 @@ local valshamr_cards = {
     {
         id = "AIRSUP",
         name = "Air Superiority",
-        cost = 2,
-        speed = "fast",
+        cost = 0,
+        speed = "quick",
         methods = {
             "Trigger",
             "Crusade",
             "Blade",
             "Nightmare",
-            "Beast",
-            "Gate",
-            "Stitch",
-            "Rampage",
         },
         textbox = "This is placeholder text.",
-        flavor = "This is placeholder flavor text.",
+        flavor = "This is placeholder text.",
+    },
+
+    {
+        id = "MSLBOM",
+        name = "Missile Bombardement",
+        cost = 2,
+        speed = "steady",
+        methods = {
+            "Trigger",
+            "Crusade",
+            "Blade",
+            "Nightmare",
+        },
+        textbox = "This is placeholder text.",
+        flavor = "This is placeholder text.",
     },
 
 }

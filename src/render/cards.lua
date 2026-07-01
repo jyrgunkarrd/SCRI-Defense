@@ -1,5 +1,6 @@
 local cards = {}
 local imageLoader = require("src.assets.image_loader")
+local cardLogic = require("src.system.card_logic")
 local handsDecks = require("src.system.hands_decks")
 local sfx = require("src.audio.sfx")
 
@@ -9,6 +10,7 @@ local HAND_EDGE_MARGIN = 48
 local CARD_BACKING_PADDING = 10
 local HOVER_PREVIEW_HAND_GAP = 18
 local HOVER_PREVIEW_TOP_MARGIN = 18
+local SLOT_PREVIEW_LEFT_MARGIN = 48
 local CARD_WIDTH = 360
 local CARD_RADIUS = 14
 local CARD_PADDING = 16
@@ -37,6 +39,7 @@ local METHOD_PANEL_PADDING = 8
 local METHOD_ICON_GAP = 6
 local METHOD_PANEL_COLUMNS = 1
 local METHOD_PANEL_ROWS = 8
+local DRAG_PORTRAIT_WIDTH = 180
 local CARD_IMAGE_EXTENSIONS = { "webp", "png", "jpg", "jpeg" }
 local METHOD_ICON_EXTENSIONS = { "png", "webp", "jpg", "jpeg" }
 local SPEED_COLORS = {
@@ -51,7 +54,7 @@ local cardImages = {}
 local bodyFont
 local flavorFont
 local methodIcons = {}
-local hoveredHandCardIndex
+local hoveredCardKey
 
 local function getSpeedColor(speed)
     return SPEED_COLORS[(speed or ""):lower()] or { 1, 1, 1 }
@@ -149,6 +152,27 @@ local function drawCardImage(card, x, y, width)
     local scale = width / cardImage:getWidth()
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(cardImage, x, y, 0, scale, scale)
+end
+
+function cards.drawCardPortrait(card, x, y, width, height)
+    local cardImage = card and cardImages[card.id] or nil
+
+    if not cardImage then
+        return
+    end
+
+    love.graphics.stencil(function()
+        love.graphics.rectangle("fill", x, y, width, height)
+    end, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+
+    local scale = math.max(width / cardImage:getWidth(), height / cardImage:getHeight())
+    local imageWidth = cardImage:getWidth() * scale
+    local imageHeight = cardImage:getHeight() * scale
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(cardImage, x + (width - imageWidth) / 2, y + (height - imageHeight) / 2, 0, scale, scale)
+    love.graphics.setStencilTest()
 end
 
 local function drawWrappedText(text, x, y, width, height, align, font, verticalAlign)
@@ -392,6 +416,24 @@ function cards.isCursorOverPlayerHand()
     return hoveredCard ~= nil
 end
 
+function cards.getHandCardAtPosition(x, y)
+    local layout = getPlayerHandLayout()
+
+    if not layout then
+        return nil
+    end
+
+    for index = layout.count, 1, -1 do
+        local card = layout.cards[index]
+        local cardX = layout.startX + (index - 1) * layout.spacing
+        local cardHeight = getCardHeight(card)
+
+        if x >= cardX and x <= cardX + CARD_WIDTH and y >= layout.y and y <= layout.y + cardHeight then
+            return card, index
+        end
+    end
+end
+
 local function drawCard(card, x, y)
     if not card then
         return
@@ -462,13 +504,32 @@ local function drawScaledCard(card, x, y, scale)
 end
 
 function cards.drawFocusedCard()
+    if cardLogic.isDragging() then
+        return
+    end
+
     local layout = getPlayerHandLayout()
     local hoveredCard, hoveredIndex = getHoveredHandCard(layout)
+    local previewSource = hoveredCard and "hand" or nil
+    local hoveredSlotIndex
 
-    if hoveredIndex ~= hoveredHandCardIndex then
-        hoveredHandCardIndex = hoveredIndex
+    if not hoveredCard then
+        local mouseX, mouseY = love.mouse.getPosition()
 
-        if hoveredIndex then
+        hoveredCard, hoveredSlotIndex = cardLogic.getPlacedCardAtPosition(mouseX, mouseY)
+        previewSource = hoveredCard and "slot" or nil
+    end
+
+    local hoveredKey
+
+    if hoveredCard then
+        hoveredKey = hoveredCard.id or hoveredCard.name
+    end
+
+    if hoveredKey ~= hoveredCardKey then
+        hoveredCardKey = hoveredKey
+
+        if hoveredKey then
             sfx.play("cardhover")
         end
     end
@@ -484,7 +545,17 @@ function cards.drawFocusedCard()
     local x = (screenWidth - CARD_WIDTH) / 2
     local y = (screenHeight - cardHeight) / 2
 
-    if handsDecks.isPlayerHandExtended() then
+    if previewSource == "slot" then
+        local previewOuterHeight = cardHeight + CARD_BACKING_PADDING * 2
+        local availableHeight = screenHeight - HOVER_PREVIEW_TOP_MARGIN * 2
+
+        if availableHeight > 0 then
+            scale = math.min(1, availableHeight / previewOuterHeight)
+        end
+
+        x = SLOT_PREVIEW_LEFT_MARGIN + CARD_BACKING_PADDING * scale
+        y = (screenHeight - cardHeight * scale) / 2
+    elseif handsDecks.isPlayerHandExtended() then
         local previewOuterHeight = cardHeight + CARD_BACKING_PADDING * 2
         local availableHeight = layout.y - HOVER_PREVIEW_HAND_GAP - HOVER_PREVIEW_TOP_MARGIN
 
@@ -501,6 +572,28 @@ function cards.drawFocusedCard()
     drawScaledCard(hoveredCard, x, y, scale)
 end
 
+function cards.drawDraggedCard()
+    local dragging = cardLogic.getDraggingCard()
+
+    if not dragging then
+        return
+    end
+
+    local mouseX, mouseY = love.mouse.getPosition()
+    local portraitHeight = DRAG_PORTRAIT_WIDTH * 1.25
+    local x = mouseX - DRAG_PORTRAIT_WIDTH / 2
+    local y = mouseY - portraitHeight / 2
+
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle("fill", x - 4, y - 4, DRAG_PORTRAIT_WIDTH + 8, portraitHeight + 8)
+
+    cards.drawCardPortrait(dragging.card, x, y, DRAG_PORTRAIT_WIDTH, portraitHeight)
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", x, y, DRAG_PORTRAIT_WIDTH, portraitHeight)
+end
+
 function cards.drawPlayerHand()
     local layout = getPlayerHandLayout()
 
@@ -508,8 +601,12 @@ function cards.drawPlayerHand()
         return
     end
 
+    local dragging = cardLogic.getDraggingCard()
+
     for index, card in ipairs(layout.cards) do
-        drawCard(card, layout.startX + (index - 1) * layout.spacing, layout.y)
+        if not dragging or dragging.handIndex ~= index then
+            drawCard(card, layout.startX + (index - 1) * layout.spacing, layout.y)
+        end
     end
 end
 

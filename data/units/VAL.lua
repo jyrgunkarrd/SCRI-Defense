@@ -8,7 +8,7 @@ local VAL_units = {
         id = "BERET",
         name = "Black Beret",
         dice = {
-            { BLK = 1 },
+            { BLU = 1 },
         },
         tags = {
 
@@ -17,7 +17,6 @@ local VAL_units = {
             "paratrooper",
 
         },
-        ratk = "snipe",
 
     },
 

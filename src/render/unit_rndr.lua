@@ -89,7 +89,7 @@ local function loadUnitIcon(iconId)
     unitIconImages[iconId] = iconPath and imageLoader.newImage(iconPath) or false
 end
 
-local function drawUnitImage(unitId, x, y, size)
+local function drawUnitImage(unitId, x, y, size, alpha, flash)
     local image = unitImages[unitId]
 
     if not image then
@@ -100,7 +100,9 @@ local function drawUnitImage(unitId, x, y, size)
     local width = image:getWidth() * scale
     local height = image:getHeight() * scale
 
-    love.graphics.setColor(1, 1, 1)
+    local tint = flash or 1
+
+    love.graphics.setColor(tint, tint, tint, alpha or 1)
     love.graphics.draw(image, x + (size - width) / 2, y + (size - height) / 2, 0, scale, scale)
 
     return x + (size - width) / 2, y + (size - height) / 2, width, height
@@ -125,14 +127,18 @@ local function round(value)
     return math.floor(value + 0.5)
 end
 
-local function drawMissingUnit(unitId, x, y, size)
-    love.graphics.setColor(0.12, 0.12, 0.12)
+local function drawMissingUnit(unitId, x, y, size, alpha, flash)
+    local tint = flash or 1
+
+    love.graphics.setColor(0.12 * tint, 0.12 * tint, 0.12 * tint, alpha or 1)
     love.graphics.rectangle("fill", x, y, size, size)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(1, 1, 1, alpha or 1)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", x, y, size, size)
     love.graphics.printf(unitId, x + 4, y + size / 2 - 10, size - 8, "center")
+
+    return x, y, size, size
 end
 
 local function getUnitPrimaryDieId(unitId)
@@ -164,7 +170,7 @@ local function getUnitBadgeFrame(x, y, width, height, size)
     return badgeX, badgeY, badgeSize
 end
 
-local function drawDieBadge(unitId, x, y, width, height, size)
+local function drawDieBadge(unitId, x, y, width, height, size, alpha)
     local dieId = getUnitPrimaryDieId(unitId)
     local die = dieId and diceIndex[dieId]
 
@@ -175,10 +181,10 @@ local function drawDieBadge(unitId, x, y, width, height, size)
     local badgeX, badgeY, badgeSize = getUnitBadgeFrame(x, y, width, height, size)
     local r, g, b = htmlColorToRgb(die.color)
 
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(0, 0, 0, alpha or 1)
     love.graphics.rectangle("fill", badgeX, badgeY, badgeSize, badgeSize)
 
-    love.graphics.setColor(r, g, b)
+    love.graphics.setColor(r, g, b, alpha or 1)
     love.graphics.rectangle(
         "fill",
         badgeX + DIE_BADGE_OUTLINE_WIDTH,
@@ -188,7 +194,7 @@ local function drawDieBadge(unitId, x, y, width, height, size)
     )
 end
 
-local function drawRatkBadge(unitId, x, y, width, height, size)
+local function drawRatkBadge(unitId, x, y, width, height, size, alpha)
     local ratk = getUnitRatk(unitId)
     local icon = ratk and unitIconImages[ratk]
 
@@ -206,34 +212,42 @@ local function drawRatkBadge(unitId, x, y, width, height, size)
     local iconX = round(badgeX + (badgeSize - iconWidth) / 2)
     local iconY = round(badgeY + (badgeSize - iconHeight) / 2)
 
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(0, 0, 0, alpha or 1)
     love.graphics.rectangle("fill", badgeX, badgeY, badgeSize, badgeSize)
 
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(0, 0, 0, alpha or 1)
     love.graphics.rectangle("fill", badgeX, badgeY, badgeSize, DIE_BADGE_OUTLINE_WIDTH)
     love.graphics.rectangle("fill", badgeX, badgeY + badgeSize - DIE_BADGE_OUTLINE_WIDTH, badgeSize, DIE_BADGE_OUTLINE_WIDTH)
     love.graphics.rectangle("fill", badgeX, badgeY, DIE_BADGE_OUTLINE_WIDTH, badgeSize)
     love.graphics.rectangle("fill", badgeX + badgeSize - DIE_BADGE_OUTLINE_WIDTH, badgeY, DIE_BADGE_OUTLINE_WIDTH, badgeSize)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(1, 1, 1, alpha or 1)
     love.graphics.draw(icon, iconX, iconY, 0, iconWidth / icon:getWidth(), iconHeight / icon:getHeight())
 
 end
 
-local function drawUnit(unitId, x, y, size)
+local function drawUnit(unitId, x, y, size, options)
+    options = options or {}
+
+    local alpha = options.alpha or 1
+    local flash = options.flash or 1
+    local scale = options.scale or 1
+    local scaledSize = size * scale
+    local drawX = x + (size - scaledSize) / 2
+    local drawY = y + (size - scaledSize) / 2
     local imageX = x
     local imageY = y
     local imageWidth = size
     local imageHeight = size
 
     if unitImages[unitId] then
-        imageX, imageY, imageWidth, imageHeight = drawUnitImage(unitId, x, y, size)
+        imageX, imageY, imageWidth, imageHeight = drawUnitImage(unitId, drawX, drawY, scaledSize, alpha, flash)
     else
-        drawMissingUnit(unitId, x, y, size)
+        imageX, imageY, imageWidth, imageHeight = drawMissingUnit(unitId, drawX, drawY, scaledSize, alpha, flash)
     end
 
-    drawDieBadge(unitId, imageX, imageY, imageWidth, imageHeight, size)
-    drawRatkBadge(unitId, imageX, imageY, imageWidth, imageHeight, size)
+    drawDieBadge(unitId, imageX, imageY, imageWidth, imageHeight, scaledSize, alpha)
+    drawRatkBadge(unitId, imageX, imageY, imageWidth, imageHeight, scaledSize, alpha)
 end
 
 local function getUnitName(unitId)
@@ -289,7 +303,8 @@ local function getDrawableUnits(entries, facilityId)
 
     for _, entry in ipairs(entries or {}) do
         if entry.fac == facilityId and unitIndex.byId[entry.unit] then
-            local unitCount = math.max(1, math.floor(entry.num or 1))
+            local rawUnitCount = entry.num == nil and 1 or entry.num
+            local unitCount = math.max(0, math.floor(rawUnitCount))
 
             for _ = 1, unitCount do
                 table.insert(drawableUnits, entry.unit)
@@ -357,8 +372,13 @@ local function getUnitDrawItems(drawableUnits, unitSize, unitSpacing)
     local drawItems = {}
     local x = 0
     local previousUnitId
+    local stackIndex = 0
 
     for index, unitId in ipairs(drawableUnits) do
+        if unitId ~= previousUnitId then
+            stackIndex = stackIndex + 1
+        end
+
         if index > 1 then
             if unitId ~= previousUnitId then
                 x = x + unitSize + UNIT_GAP
@@ -370,6 +390,7 @@ local function getUnitDrawItems(drawableUnits, unitSize, unitSpacing)
         table.insert(drawItems, {
             unitId = unitId,
             index = index,
+            stackIndex = stackIndex,
             x = x,
         })
 
@@ -426,12 +447,24 @@ local function getUnitRowLayout(rowKey, overrideBounds, scrollKey)
     }
 end
 
-local function getHoveredUnit(layout)
+local function getUnitKey(rowKey, unitIndex)
+    return ("%s:%d"):format(rowKey, unitIndex)
+end
+
+local function getStackKey(rowKey, stackIndex)
+    return ("%s:stack:%d"):format(rowKey, stackIndex)
+end
+
+local function getHoveredUnit(layout, pointX, pointY, hiddenUnitKeys)
     if not layout or #layout.drawItems == 0 then
         return nil
     end
 
-    local mouseX, mouseY = love.mouse.getPosition()
+    local mouseX, mouseY = pointX, pointY
+
+    if not mouseX or not mouseY then
+        mouseX, mouseY = love.mouse.getPosition()
+    end
 
     if mouseX < layout.boxX
         or mouseX > layout.boxX + layout.boxWidth
@@ -441,14 +474,20 @@ local function getHoveredUnit(layout)
     end
 
     for _, drawItem in ipairs(layout.drawItems) do
+        local unitKey = getUnitKey(layout.rowKey, drawItem.index)
         local unitX = layout.boxX + BOX_PADDING - layout.scroll + drawItem.x
         local unitY = layout.boxY + BOX_PADDING
 
-        if mouseX >= unitX
+        if not (hiddenUnitKeys and hiddenUnitKeys[unitKey])
+            and mouseX >= unitX
             and mouseX <= unitX + layout.unitSize
             and mouseY >= unitY
             and mouseY <= unitY + layout.unitSize then
-            return drawItem.unitId, drawItem.index, ("%s:%d"):format(layout.rowKey, drawItem.index)
+            return drawItem.unitId, drawItem.index, unitKey, {
+                x = unitX,
+                y = unitY,
+                size = layout.unitSize,
+            }, getStackKey(layout.rowKey, drawItem.stackIndex)
         end
     end
 end
@@ -584,7 +623,9 @@ function unitRndr.scrollPlayerUnits(direction)
     unitRndr.scrollUnits(direction)
 end
 
-local function drawUnitRow(layout)
+local function drawUnitRow(layout, options)
+    options = options or {}
+
     if not layout or #layout.drawItems == 0 then
         return
     end
@@ -605,8 +646,11 @@ local function drawUnitRow(layout)
     for index = #layout.drawItems, 1, -1 do
         local drawItem = layout.drawItems[index]
         local unitX = cursorX + drawItem.x
+        local unitKey = getUnitKey(layout.rowKey, drawItem.index)
 
-        drawUnit(drawItem.unitId, unitX, layout.boxY + BOX_PADDING, layout.unitSize)
+        if not (options.hiddenUnitKeys and options.hiddenUnitKeys[unitKey]) then
+            drawUnit(drawItem.unitId, unitX, layout.boxY + BOX_PADDING, layout.unitSize)
+        end
     end
 
     love.graphics.setStencilTest()
@@ -623,7 +667,28 @@ function unitRndr.drawUnitSlot(rowKey, x, y, width, height, options)
         height = height,
     }, options.scrollKey)
 
-    drawUnitRow(layout)
+    drawUnitRow(layout, {
+        hiddenUnitKeys = options.hiddenUnitKeys,
+    })
+end
+
+function unitRndr.getUnitAtSlot(rowKey, x, y, width, height, scrollKey, pointX, pointY, options)
+    options = options or {}
+
+    local layout = getUnitRowLayout(rowKey, {
+        x = x,
+        y = y,
+        width = width,
+        height = height,
+    }, scrollKey)
+
+    local unitId, index, unitKey, bounds = getHoveredUnit(layout, pointX, pointY, options.hiddenUnitKeys)
+
+    return unitId, index, unitKey, bounds
+end
+
+function unitRndr.drawCombatUnit(unitId, x, y, size, options)
+    drawUnit(unitId, x, y, size, options)
 end
 
 function unitRndr.drawPlayerUnits()
@@ -636,10 +701,10 @@ function unitRndr.drawPlayerUnits()
 
         drawUnitRow(layout)
 
-        local unitId, _, unitKey = getHoveredUnit(layout)
+        local unitId, _, _, _, stackKey = getHoveredUnit(layout)
         if unitId then
             hoveredUnitId = unitId
-            hoveredKey = unitKey
+            hoveredKey = stackKey
             hoveredLayout = layout
         end
     end

@@ -1,6 +1,8 @@
 local mapElements = {}
 local imageLoader = require("src.assets.image_loader")
+local cardLogic = require("src.system.card_logic")
 local locationFacGeo = require("src.system.location_fac_geo")
+local cards = require("src.render.cards")
 local sfx = require("src.audio.sfx")
 
 local TILE_HORIZONTAL_MARGIN = 48
@@ -90,6 +92,16 @@ local function drawCenterSquares(tileX, tileY, imageX, imageWidth)
 
         love.graphics.setColor(1, 1, 1)
         love.graphics.rectangle("line", squareX, squareY, squareSize, squareSize)
+
+        local placedCard = cardLogic.getPlacedCard(index + 1)
+
+        if placedCard then
+            cards.drawCardPortrait(placedCard, squareX, squareY, squareSize, squareSize)
+
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.setLineWidth(3)
+            love.graphics.rectangle("line", squareX, squareY, squareSize, squareSize)
+        end
     end
 end
 
@@ -161,6 +173,47 @@ function mapElements.getRightBoxBounds(positionFromBottom)
     }
 
     return boxX, positions[positionFromBottom or 1], RIGHT_BOX_WIDTH, RIGHT_BOX_HEIGHT
+end
+
+function mapElements.getCenterCardSlotBounds(slotIndex)
+    local tileX, tileY, tileWidth = mapElements.getTileBounds()
+    local selectedFacility = locationFacGeo.getSelectedFacility()
+    local facilityImage = selectedFacility and facilityImages[selectedFacility.id] or nil
+
+    if not facilityImage then
+        return nil
+    end
+
+    local availableHeight = TILE_HEIGHT - FACILITY_IMAGE_PADDING * 2
+    local facilityX = tileX + TAB_INSET + TAB_WIDTH + FACILITY_IMAGE_PADDING
+    local rightBoxX = tileX + tileWidth - FACILITY_IMAGE_PADDING - RIGHT_BOX_WIDTH
+    local squareSize = (availableHeight - CENTER_SQUARE_GAP) / 2
+    local availableWidth = rightBoxX - FACILITY_IMAGE_PADDING - squareSize - FACILITY_IMAGE_PADDING - facilityX
+    local facilityScale = math.min(
+        availableHeight / facilityImage:getHeight(),
+        math.max(0, availableWidth) / facilityImage:getWidth()
+    )
+    local facilityWidth = facilityImage:getWidth() * facilityScale
+    local slotX = facilityX + facilityWidth + FACILITY_IMAGE_PADDING
+    local slotY = tileY + FACILITY_IMAGE_PADDING + ((slotIndex or 1) - 1) * (squareSize + CENTER_SQUARE_GAP)
+
+    return slotX, slotY, squareSize, squareSize
+end
+
+cardLogic.setSlotBoundsProvider(mapElements.getCenterCardSlotBounds)
+
+function mapElements.getCenterCardSlotAtPosition(x, y)
+    for slotIndex = 1, 2 do
+        local slotX, slotY, slotWidth, slotHeight = mapElements.getCenterCardSlotBounds(slotIndex)
+
+        if slotX
+            and x >= slotX
+            and x <= slotX + slotWidth
+            and y >= slotY
+            and y <= slotY + slotHeight then
+            return slotIndex
+        end
+    end
 end
 
 local function getTabIndexAtPosition(x, y)

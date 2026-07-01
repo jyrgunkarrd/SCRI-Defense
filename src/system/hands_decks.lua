@@ -34,6 +34,14 @@ function handsDecks.getPlayerHand()
     return playerHand
 end
 
+function handsDecks.removePlayerHandCard(index)
+    if not index or index < 1 or index > #playerHand then
+        return nil
+    end
+
+    return table.remove(playerHand, index)
+end
+
 function handsDecks.togglePlayerHandExtended()
     playerHandExtended = not playerHandExtended
 end

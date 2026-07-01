@@ -21,6 +21,7 @@ function love.draw()
     playerOverlays.drawTopBox()
     cards.drawFocusedCard()
     cards.drawPlayerHand()
+    cards.drawDraggedCard()
     cutRndr.drawCombatCutIn()
 end
 
@@ -30,6 +31,10 @@ end
 
 function love.mousepressed(x, y, button, istouch, presses)
     input.mousepressed(x, y, button, istouch, presses)
+end
+
+function love.mousereleased(x, y, button, istouch, presses)
+    input.mousereleased(x, y, button, istouch, presses)
 end
 
 function love.wheelmoved(x, y)

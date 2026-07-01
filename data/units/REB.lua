@@ -8,7 +8,7 @@ local REB_units = {
         id = "GUE",
         name = "Guerrilla",
         dice = {
-            { PNK = 1 },
+            { WHT = 1 },
         },
         tags = {
 
