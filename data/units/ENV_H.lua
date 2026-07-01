@@ -6,11 +6,17 @@ local ENV_H_units = {
     {
 
         id = "FSCI",
-        name = "Field Scientist",
+        name = "Field Biologist",
         dice = {
             { WHT = 1 },
         },
+        tags = {
 
+            "human",
+            "civilian",
+            "scientist",
+
+        },
     },
 
 }

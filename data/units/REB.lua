@@ -10,7 +10,14 @@ local REB_units = {
         dice = {
             { PNK = 1 },
         },
+        tags = {
 
+            "human",
+            "soldier",
+            "irregular",
+
+        },
+        ratk = "skirm",
     },
 
 }

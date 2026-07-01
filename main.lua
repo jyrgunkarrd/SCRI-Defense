@@ -2,6 +2,7 @@ local mapElements = require("src.render.map_elements")
 local playerOverlays = require("src.render.player_overlays")
 local cards = require("src.render.cards")
 local unitRndr = require("src.render.unit_rndr")
+local cutRndr = require("src.render.cut_rndr")
 local input = require("src.controls.input")
 
 function love.load()
@@ -20,6 +21,7 @@ function love.draw()
     playerOverlays.drawTopBox()
     cards.drawFocusedCard()
     cards.drawPlayerHand()
+    cutRndr.drawCombatCutIn()
 end
 
 function love.keypressed(key, scancode, isrepeat)

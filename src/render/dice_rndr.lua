@@ -86,6 +86,10 @@ function diceRndr.getPanelSize()
         FACE_ROWS * FACE_SIZE + (FACE_ROWS - 1) * FACE_GAP
 end
 
+function diceRndr.getPanelPadding()
+    return PANEL_PADDING
+end
+
 function diceRndr.drawDie(die, x, y)
     if not die then
         return

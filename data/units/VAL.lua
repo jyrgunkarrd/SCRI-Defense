@@ -17,6 +17,7 @@ local VAL_units = {
             "paratrooper",
 
         },
+        ratk = "snipe",
 
     },
 
